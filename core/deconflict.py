@@ -1,9 +1,9 @@
 from __future__ import annotations
 import math
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 from core.models import Mission
-from core.trajectory import get_position_at_time
+from core.trajectory import get_position_at_time, euclidean_distance
 
 
 def overlapping_window(m1: Mission, m2: Mission) -> Optional[Tuple[float, float]]:
@@ -13,13 +13,14 @@ def overlapping_window(m1: Mission, m2: Mission) -> Optional[Tuple[float, float]
     return (overlap_start, overlap_end) if overlap_start < overlap_end else None
 
 
-def severity_from_distance(distance: float, safety_distance: float) -> float:
-    """Return a severity score from 0.0 (safe) to 1.0 (collision threat)."""
-    if distance <= 0.0:
-        return 1.0
-    if distance >= safety_distance:
-        return 0.0
-    return (safety_distance - distance) / safety_distance
+def severity_from_distance(distance: float, safety_distance: float) -> str:
+    """Return a severity level based on the distance."""
+    if distance <= 0.4 * safety_distance:
+        return "high"
+    elif distance <= 0.7 * safety_distance:
+        return "medium"
+    else:
+        return "low"
 
 
 def predict_conflict(
@@ -41,16 +42,26 @@ def predict_conflict(
     while time <= end_time:
         position_a = get_position_at_time(m1, time)
         position_b = get_position_at_time(m2, time)
-        distance = math.dist(position_a, position_b)
+        distance = euclidean_distance(position_a, position_b)
         if distance <= safety_distance:
             return {
                 "status": "conflict",
-                "conflict_time": time,
-                "distance": distance,
-                "position_a": position_a,
-                "position_b": position_b,
+                "conflict_time": round(time, 2),
+                "distance": round(distance, 2),
+                "position_a": (position_a.x, position_a.y, position_a.z),
+                "position_b": (position_b.x, position_b.y, position_b.z),
                 "severity": severity_from_distance(distance, safety_distance),
             }
         time += time_step
 
     return {"status": "clear"}
+
+
+def batch_check(primary_mission: Mission, other_missions: List[Mission], safety_distance: float = 5.0) -> List[dict]:
+    """Check for conflicts between a primary mission and a list of other missions."""
+    conflicts = []
+    for m2 in other_missions:
+        conflict = predict_conflict(primary_mission, m2, safety_distance)
+        if conflict["status"] == "conflict":
+            conflicts.append(conflict)
+    return conflicts
