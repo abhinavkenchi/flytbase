@@ -1,7 +1,11 @@
 __pycache__/
 *.pyc
 .venv/
-.env
+.vscode/
+.continue/
+.aider*
+*.db
+*.sqlite
+*.cache
 *.egg-info/
-.streamlit/
 .DS_Store
