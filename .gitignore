@@ -4,8 +4,7 @@ __pycache__/
 .vscode/
 .continue/
 .aider*
+*.egg-info/
 *.db
 *.sqlite
-*.cache
-*.egg-info/
 .DS_Store
