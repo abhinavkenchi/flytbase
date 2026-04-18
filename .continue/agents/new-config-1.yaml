@@ -1,0 +1,8 @@
+models:
+  - title: Fast Coding
+    provider: ollama
+    model: qwen2.5-coder:7b
+
+  - title: Reasoning Chat
+    provider: ollama
+    model: gemma4:e4b
